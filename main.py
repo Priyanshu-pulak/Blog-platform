@@ -63,3 +63,16 @@ def get_post(post_id: int):
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Post with id {post_id} not found",
     )
+
+@app.post(
+    "/api/posts",
+    response_model=PostResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_post(post: PostCreate):
+    new_id = len(posts) + 1
+    new_post = post.model_dump()
+    new_post["id"] = new_id
+    new_post["date_posted"] = "1st Feb, 2026"
+    posts.append(new_post)
+    return new_post
