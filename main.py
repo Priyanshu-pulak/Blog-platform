@@ -35,10 +35,10 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
         message = error["msg"]
         error_dict[field] = message
 
-        return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={"errors": error_dict},
-        )
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"errors": error_dict},
+    )
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
