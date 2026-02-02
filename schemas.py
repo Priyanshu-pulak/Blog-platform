@@ -3,15 +3,15 @@ from typing import Annotated
 class PostBase(BaseModel):
     title: Annotated[
         str,
-        Field(min_length = 1, max_length = 100, description="Title of the post", examples = "first post")
+        Field(min_length = 1, max_length = 100, description="Title of the post", examples = ["first post"])
     ]
     content: Annotated[
         str,
-        Field(min_length = 1, descripition="Content for the post", examples = "This is my first post content")
+        Field(min_length = 1, description="Content for the post", examples = ["This is my first post content"])
     ]
     author: Annotated[
         str,
-        Field(min_length = 1, description="Author of the post", examples = "Priyanshu")
+        Field(min_length = 1, description="Author of the post", examples = ["Priyanshu"])
     ]
 
 class PostCreate(PostBase):
