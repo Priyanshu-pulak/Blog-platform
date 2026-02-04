@@ -7,9 +7,9 @@ from schemas import PostCreate, PostResponse
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory = "static"), name = "static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-templates = Jinja2Templates(directory = "templates")
+templates = Jinja2Templates(directory="templates")
 
 posts: list[dict] = [
     {
@@ -28,6 +28,7 @@ posts: list[dict] = [
     },
 ]
 
+
 def validation_exception_handler(request: Request, exc: RequestValidationError):
     error_dict = {}
     for error in exc.errors():
@@ -40,19 +41,23 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
         content={"errors": error_dict},
     )
 
+
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
-@app.get("/", include_in_schema = False)
+
+@app.get("/", include_in_schema=False)
 def home(request: Request):
     return templates.TemplateResponse(
         request,
         "home.html",
-        {"posts" : posts, "title" : "Home"},
+        {"posts": posts, "title": "Home"},
     )
+
 
 @app.get("/api/posts", response_model=list[PostResponse])
 def get_posts():
     return posts
+
 
 @app.get("/api/posts/{post_id}", response_model=PostResponse)
 def get_post(post_id: int):
@@ -63,6 +68,7 @@ def get_post(post_id: int):
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Post with id {post_id} not found",
     )
+
 
 @app.post(
     "/api/posts",
