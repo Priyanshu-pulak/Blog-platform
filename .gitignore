@@ -13,3 +13,5 @@ wheels/
 *.db
 *.sqlite
 
+# Mac files 
+.DS_Store
