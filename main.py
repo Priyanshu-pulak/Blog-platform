@@ -1,17 +1,18 @@
 from typing import Annotated
 
-from fastapi import FastAPI, Request, HTTPException, status, Depends
+from fastapi import FastAPI, Request, HTTPException, status, Depends, Path
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 import models
+from models import Post, User
 from database import Base, engine, get_db
-from src.schemas import PostCreate, PostResponse, UserCreate, UserResponse
+from src.schemas import PostCreate, PostResponse, PostUpdate, UserCreate, UserResponse
 
 Base.metadata.create_all(bind=engine)
 
@@ -166,3 +167,83 @@ def get_post(post_id: int, db: Annotated[Session, Depends(get_db)]) -> PostRespo
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Post with id {post_id} not found",
     )
+
+
+@app.put(
+    "/api/posts/{post_id}",
+    response_model=PostResponse,
+)
+def update_post_full(
+    post_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the post you want to update",
+            example=1,
+        ),
+    ],
+    post_data: PostCreate,
+    db: Annotated[Session, Depends(get_db)],
+) -> Post:
+    existing_user = db.scalars(select(User).where(User.id == post_data.user_id)).first()
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {post_data.user_id} not found",
+        )
+
+    stmt = (
+        update(Post)
+        .where(Post.id == post_id)
+        .values(**post_data.model_dump())
+        .returning(Post)
+    )
+
+    updated_post = db.scalars(stmt).first()
+
+    if not updated_post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found",
+        )
+
+    db.commit()
+    return updated_post
+
+
+@app.patch(
+    "/api/posts/{post_id}",
+    response_model=PostResponse,
+)
+def update_post_partial(
+    post_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the post you want to update",
+            example = 1,
+        )
+    ],
+    post_data: PostUpdate,
+    db: Annotated[Session, Depends(get_db)],
+) -> Post:
+    update_data = post_data.model_dump(exclude_unset=True)
+
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No data provided to update",
+        )
+
+    stmt = update(Post).where(Post.id == post_id).values(**update_data).returning(Post)
+
+    updated_post = db.scalars(stmt).first()
+
+    if not updated_post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found",
+        )
+
+    db.commit()
+    return updated_post

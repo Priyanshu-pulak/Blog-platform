@@ -35,6 +35,28 @@ class PostCreate(PostBase):
     ]
 
 
+class PostUpdate(PostBase):
+    title: Annotated[
+        str | None,
+        Field(
+            default=None,
+            min_length=1,
+            max_length=100,
+            description="Title of the post",
+            examples=["Updated title of the post"],
+        ),
+    ]
+    content: Annotated[
+        str | None,
+        Field(
+            default=None,
+            min_length=1,
+            description="Content for the post",
+            examples=["Updated content for the post"],
+        ),
+    ]
+
+
 class PostResponse(PostBase):
     model_config = ConfigDict(from_attributes=True)
 
