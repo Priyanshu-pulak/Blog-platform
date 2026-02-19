@@ -12,7 +12,14 @@ from sqlalchemy.orm import Session
 import models
 from models import Post, User
 from database import Base, engine, get_db
-from src.schemas import PostCreate, PostResponse, PostUpdate, UserCreate, UserResponse
+from src.schemas import (
+    PostCreate,
+    PostResponse,
+    PostUpdate,
+    UserCreate,
+    UserResponse,
+    UserUpdate,
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -123,6 +130,94 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
     posts = result.scalars().all()
     return posts
+
+
+@app.patch(
+    "/api/users/{user_id}",
+    response_model=UserResponse,
+)
+def update_user(
+    user_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the user you want to update",
+            example=1,
+        ),
+    ],
+    user_update: UserUpdate,
+    db: Annotated[Session, Depends(get_db)],
+) -> User:
+    update_data = user_update.model_dump(exclude_unset=True)
+
+    if not update_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No data provided to update",
+        )
+
+    user_exists = db.scalars(select(User.id).where(User.id == user_id)).first()
+    if not user_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    if "username" in update_data:
+        stmt = select(User).where(
+            User.username == update_data["username"],
+            User.id != user_id,
+        )
+        if db.scalars(stmt).first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with username '{update_data['username']}' already exists",
+            )
+
+    if "email" in update_data:
+        stmt = select(User).where(
+            User.email == update_data["email"],
+            User.id != user_id,
+        )
+        if db.scalars(stmt).first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with email '{update_data['email']}' already exists",
+            )
+
+    stmt = update(User).where(User.id == user_id).values(**update_data).returning(User)
+
+    updated_user = db.scalars(stmt).first()
+    db.commit()
+    return updated_user
+
+
+@app.delete(
+    "/api/users/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_user(
+    user_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the user you want to delete",
+            example=1,
+        ),
+    ],
+    db: Annotated[Session, Depends(get_db)],
+) -> None:
+    result = db.execute(select(models.User).where(models.User.id == user_id))
+    existing_user = result.scalars().first()
+
+    if not existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found",
+        )
+
+    db.delete(existing_user)
+    db.commit()
 
 
 @app.post(

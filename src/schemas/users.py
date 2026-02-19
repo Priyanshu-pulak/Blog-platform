@@ -26,6 +26,37 @@ class UserCreate(UserBase):
     pass
 
 
+class UserUpdate(UserBase):
+    username: Annotated[
+        str | None,
+        Field(
+            default=None,
+            min_length=1,
+            max_length=50,
+            description="Update username of the user",
+            examples=["Priyanshu"],
+        ),
+    ]
+    email: Annotated[
+        EmailStr | None,
+        Field(
+            default=None,
+            max_length=120,
+            description="Update email address of the user",
+            examples=["priyanshu1@gamil.com"],
+        ),
+    ]
+    image_file: Annotated[
+        str | None,
+        Field(
+            default=None,
+            min_length=1,
+            max_length=200,
+            description="Update profile picture of the user",
+        ),
+    ]
+
+
 class UserResponse(UserBase):
     model_config = ConfigDict(
         from_attributes=True

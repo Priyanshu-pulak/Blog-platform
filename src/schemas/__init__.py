@@ -1,5 +1,5 @@
 from .posts import PostCreate, PostResponse, PostUpdate
-from .users import UserCreate, UserResponse
+from .users import UserCreate, UserResponse, UserUpdate
 
 __all__ = [
     "PostCreate",
@@ -7,4 +7,5 @@ __all__ = [
     "PostUpdate",
     "UserCreate",
     "UserResponse",
+    "UserUpdate",
 ]
