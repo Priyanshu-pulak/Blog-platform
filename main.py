@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 import models
 from database import Base, engine, get_db
-from schemas import PostCreate, PostResponse, UserCreate, UserResponse
+from src.schemas import PostCreate, PostResponse, UserCreate, UserResponse
 
 Base.metadata.create_all(bind=engine)
 
