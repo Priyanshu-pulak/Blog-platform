@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.orm import Session
 
 import models
@@ -221,8 +221,8 @@ def update_post_partial(
         Path(
             ...,
             description="The ID of the post you want to update",
-            example = 1,
-        )
+            example=1,
+        ),
     ],
     post_data: PostUpdate,
     db: Annotated[Session, Depends(get_db)],
@@ -247,3 +247,30 @@ def update_post_partial(
 
     db.commit()
     return updated_post
+
+
+@app.delete(
+    "/api/posts/{post_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_post(
+    post_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the post you want to delete",
+            example=1,
+        ),
+    ],
+    db: Annotated[Session, Depends(get_db)],
+) -> None:
+    stmt = delete(Post).where(Post.id == post_id)
+    result = db.execute(stmt)
+
+    if result.rowcount == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id {post_id} not found",
+        )
+
+    db.commit()
