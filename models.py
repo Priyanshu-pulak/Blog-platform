@@ -6,7 +6,7 @@ from typing import Annotated, List
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import Base
+from src.core import Base
 
 intpk = Annotated[int, mapped_column(primary_key=True, index=True)]
 

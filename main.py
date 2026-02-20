@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, Request, Depends
@@ -11,19 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from models import Post
-from database import Base, engine, get_db
 
 from src.routers import users_router, post_router
-from src.core import validation_exception_handler
-
-
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-
-    await engine.dispose()
+from src.core import (
+    validation_exception_handler,
+    get_db,
+    lifespan,
+)
 
 
 app = FastAPI(lifespan=lifespan)
