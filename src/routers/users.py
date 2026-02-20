@@ -10,13 +10,15 @@ from fastapi import (
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from models import User
+from models import User, Post
 from database import get_db
 from src.schemas import (
     UserCreate,
     UserUpdate,
     UserResponse,
+    PostResponse,
 )
 
 router = APIRouter()
@@ -179,3 +181,35 @@ async def delete_user(
 
     await db.delete(existing_user)
     await db.commit()
+
+@router.get(
+    "/{user_id}/posts",
+    response_model=list[PostResponse],
+)
+async def get_user_posts(
+    user_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the user whose posts you want to retrieve",
+            examples=[1],
+        ),
+    ],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[Post]:
+    user_exists = await db.scalar(
+        select(User.id).where(User.id == user_id),
+    )
+
+    if user_exists is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id {user_id} not found",
+        )
+
+    result = await db.execute(
+        select(Post).options(selectinload(Post.author)).where(Post.user_id == user_id),
+    )
+    posts = result.scalars().all()
+
+    return posts
