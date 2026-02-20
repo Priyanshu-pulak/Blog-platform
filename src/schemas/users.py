@@ -17,7 +17,7 @@ class UserBase(BaseModel):
         Field(
             max_length=120,
             description="Email address of the author",
-            examples=["priyanshu1@gamil.com"],
+            examples=["priyanshu1@gmail.com"],
         ),
     ]
 
@@ -43,7 +43,7 @@ class UserUpdate(UserBase):
             default=None,
             max_length=120,
             description="Update email address of the user",
-            examples=["priyanshu1@gamil.com"],
+            examples=["priyanshu1@gmail.com"],
         ),
     ]
     image_file: Annotated[
