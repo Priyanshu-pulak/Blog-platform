@@ -5,6 +5,7 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
+    Path,
 )
 
 from sqlalchemy import select
@@ -55,3 +56,31 @@ async def create_user(
     await db.commit()
 
     return new_user
+
+
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+)
+async def get_user(
+    user_id: Annotated[
+        int,
+        Path(
+            ...,
+            description="The ID of the user you want to retrieve",
+            examples=[1],
+        ),
+    ],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    existing_user = await db.scalar(
+        select(User).where(User.id == user_id),
+    )
+
+    if existing_user:
+        return existing_user
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"User with id {user_id} not found",
+    )
