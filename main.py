@@ -17,10 +17,11 @@ from src.schemas import (
     PostCreate,
     PostResponse,
     PostUpdate,
-    UserCreate,
     UserResponse,
     UserUpdate,
 )
+
+from src.routers import users_router
 
 
 @asynccontextmanager
@@ -33,6 +34,8 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(users_router, prefix="/api/users", tags=["users"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -68,43 +71,6 @@ async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
         "home.html",
         {"posts": posts, "title": "Home"},
     )
-
-
-@app.post(
-    "/api/users",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_user(
-    user: UserCreate,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
-
-    user_exists = await db.scalar(select(User.id).where(User.username == user.username))
-
-    if user_exists:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User with username '{user.username}' already exists",
-        )
-
-    email_exists = await db.scalar(select(User.id).where(User.email == user.email))
-
-    if email_exists:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User with email '{user.email}' already exists",
-        )
-
-    new_user = User(
-        username=user.username,
-        email=user.email,
-    )
-
-    db.add(new_user)
-    await db.commit()
-
-    return new_user
 
 
 @app.get(
@@ -159,9 +125,7 @@ async def get_user_posts(
         )
 
     result = await db.execute(
-        select(Post)
-        .options(selectinload(Post.author))
-        .where(Post.user_id == user_id),
+        select(Post).options(selectinload(Post.author)).where(Post.user_id == user_id),
     )
     posts = result.scalars().all()
 
@@ -192,10 +156,8 @@ async def update_user(
             detail="No data provided to update",
         )
 
-    user_exists = await db.scalar(
-        select(User.id).where(User.id == user_id)
-    )
-    
+    user_exists = await db.scalar(select(User.id).where(User.id == user_id))
+
     if not user_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -226,12 +188,7 @@ async def update_user(
                 detail=f"User with email '{update_data['email']}' already exists",
             )
 
-    stmt = (
-        update(User)
-        .where(User.id == user_id)
-        .values(**update_data)
-        .returning(User)
-    )
+    stmt = update(User).where(User.id == user_id).values(**update_data).returning(User)
 
     updated_user = await db.scalar(stmt)
     await db.commit()
@@ -302,10 +259,7 @@ async def create_post(
 async def get_posts(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Post]:
-    stmt = (
-        select(Post)
-        .options(selectinload(Post.author))
-    )
+    stmt = select(Post).options(selectinload(Post.author))
     result = await db.execute(stmt)
     posts = result.scalars().all()
 
