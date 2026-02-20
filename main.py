@@ -17,8 +17,6 @@ from src.schemas import (
     PostCreate,
     PostResponse,
     PostUpdate,
-    UserResponse,
-    UserUpdate,
 )
 
 from src.routers import users_router
@@ -106,96 +104,7 @@ async def get_user_posts(
     return posts
 
 
-@app.patch(
-    "/api/users/{user_id}",
-    response_model=UserResponse,
-)
-async def update_user(
-    user_id: Annotated[
-        int,
-        Path(
-            ...,
-            description="The ID of the user you want to update",
-            examples=[1],
-        ),
-    ],
-    user_update: UserUpdate,
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> User:
-    update_data = user_update.model_dump(exclude_unset=True)
 
-    if not update_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No data provided to update",
-        )
-
-    user_exists = await db.scalar(select(User.id).where(User.id == user_id))
-
-    if not user_exists:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    if "username" in update_data:
-        stmt = select(User.id).where(
-            User.username == update_data["username"],
-            User.id != user_id,
-        )
-
-        if await db.scalar(stmt):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User with username '{update_data['username']}' already exists",
-            )
-
-    if "email" in update_data:
-        stmt = select(User.id).where(
-            User.email == update_data["email"],
-            User.id != user_id,
-        )
-
-        if await db.scalar(stmt):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User with email '{update_data['email']}' already exists",
-            )
-
-    stmt = update(User).where(User.id == user_id).values(**update_data).returning(User)
-
-    updated_user = await db.scalar(stmt)
-    await db.commit()
-    return updated_user
-
-
-@app.delete(
-    "/api/users/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def delete_user(
-    user_id: Annotated[
-        int,
-        Path(
-            ...,
-            description="The ID of the user you want to delete",
-            examples=[1],
-        ),
-    ],
-    db: Annotated[AsyncSession, Depends(get_db)],
-) -> None:
-    existing_user = await db.scalar(
-        select(User).where(User.id == user_id),
-    )
-
-    if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
-        )
-
-    await db.delete(existing_user)
-    await db.commit()
 
 
 @app.post(
