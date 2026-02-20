@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import FastAPI, Request, status, Depends
+from fastapi import FastAPI, Request, Depends
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -15,6 +14,7 @@ from models import Post
 from database import Base, engine, get_db
 
 from src.routers import users_router, post_router
+from src.core import validation_exception_handler
 
 
 @asynccontextmanager
@@ -36,20 +36,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.mount("/media", StaticFiles(directory="media"), name="media")
 templates = Jinja2Templates(directory="templates")
-
-
-def validation_exception_handler(request: Request, exc: RequestValidationError):
-    error_dict = {}
-    for error in exc.errors():
-        field = error["loc"][-1]
-        message = error["msg"]
-        error_dict[field] = message
-
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"errors": error_dict},
-    )
-
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
