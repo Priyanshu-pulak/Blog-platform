@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models import Post
+from src.models import Post
 
 from src.routers import users_router, post_router
 from src.core import (

@@ -12,7 +12,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models import User, Post
+from src.models import User, Post
 from src.core import get_db
 from src.schemas import (
     PostCreate,
