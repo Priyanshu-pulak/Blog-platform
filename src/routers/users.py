@@ -8,9 +8,7 @@ from fastapi import (
     Path,
 )
 
-from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.models import User, Post
 from src.core import get_db
@@ -19,6 +17,17 @@ from src.schemas import (
     UserUpdate,
     UserResponse,
     PostResponse,
+)
+
+from src.crud import (
+    is_id_exists,
+    is_username_taken,
+    is_email_taken,
+    get_user_by_id,
+    user_create,
+    user_update,
+    user_delete,
+    get_posts_by_user_id,
 )
 
 router = APIRouter()
@@ -34,15 +43,15 @@ async def create_user(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
 
-    user_exists = await db.scalar(select(User.id).where(User.username == user.username))
+    username_exists = await is_username_taken(db, user.username)
 
-    if user_exists:
+    if username_exists:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"User with username '{user.username}' already exists",
         )
 
-    email_exists = await db.scalar(select(User.id).where(User.email == user.email))
+    email_exists = await is_email_taken(db, user.email)
 
     if email_exists:
         raise HTTPException(
@@ -50,13 +59,7 @@ async def create_user(
             detail=f"User with email '{user.email}' already exists",
         )
 
-    new_user = User(
-        username=user.username,
-        email=user.email,
-    )
-
-    db.add(new_user)
-    await db.commit()
+    new_user = await user_create(db, user)
 
     return new_user
 
@@ -69,16 +72,13 @@ async def get_user(
     user_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the user you want to retrieve",
             examples=[1],
         ),
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    existing_user = await db.scalar(
-        select(User).where(User.id == user_id),
-    )
+    existing_user = await get_user_by_id(db, user_id)
 
     if existing_user:
         return existing_user
@@ -97,15 +97,14 @@ async def update_user(
     user_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the user you want to update",
             examples=[1],
         ),
     ],
-    user_update: UserUpdate,
+    user_update_data: UserUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    update_data = user_update.model_dump(exclude_unset=True)
+    update_data = user_update_data.model_dump(exclude_unset=True)
 
     if not update_data:
         raise HTTPException(
@@ -113,44 +112,30 @@ async def update_user(
             detail="No data provided to update",
         )
 
-    user_exists = await db.scalar(
-        select(User.id).where(User.id == user_id),
-    )
+    id_exists = await is_id_exists(db, user_id)
 
-    if not user_exists:
+    if not id_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with id {user_id} not found",
         )
 
     if "username" in update_data:
-        stmt = select(User.id).where(
-            User.username == update_data["username"],
-            User.id != user_id,
-        )
-
-        if await db.scalar(stmt):
+        if await is_username_taken(db, update_data["username"], user_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User with username '{update_data['username']}' already exists",
             )
 
     if "email" in update_data:
-        stmt = select(User.id).where(
-            User.email == update_data["email"],
-            User.id != user_id,
-        )
-
-        if await db.scalar(stmt):
+        if await is_email_taken(db, update_data["email"], user_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User with email '{update_data['email']}' already exists",
             )
 
-    stmt = update(User).where(User.id == user_id).values(**update_data).returning(User)
+    updated_user = await user_update(db, user_id, update_data)
 
-    updated_user = await db.scalar(stmt)
-    await db.commit()
     return updated_user
 
 
@@ -162,16 +147,13 @@ async def delete_user(
     user_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the user you want to delete",
             examples=[1],
         ),
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
-    existing_user = await db.scalar(
-        select(User).where(User.id == user_id),
-    )
+    existing_user = await get_user_by_id(db, user_id)
 
     if not existing_user:
         raise HTTPException(
@@ -179,8 +161,8 @@ async def delete_user(
             detail=f"User with id {user_id} not found",
         )
 
-    await db.delete(existing_user)
-    await db.commit()
+    return await user_delete(db, existing_user)
+
 
 @router.get(
     "/{user_id}/posts",
@@ -190,26 +172,20 @@ async def get_user_posts(
     user_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the user whose posts you want to retrieve",
             examples=[1],
         ),
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Post]:
-    user_exists = await db.scalar(
-        select(User.id).where(User.id == user_id),
-    )
+    user_exists = await is_id_exists(db, user_id)
 
-    if user_exists is None:
+    if not user_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with id {user_id} not found",
         )
 
-    result = await db.execute(
-        select(Post).options(selectinload(Post.author)).where(Post.user_id == user_id),
-    )
-    posts = result.scalars().all()
+    posts = await get_posts_by_user_id(db, user_id)
 
     return posts
