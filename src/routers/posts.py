@@ -8,16 +8,25 @@ from fastapi import (
     Path,
 )
 
-from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from src.models import User, Post
+from src.models import Post
 from src.core import get_db
 from src.schemas import (
     PostCreate,
     PostUpdate,
     PostResponse,
+)
+
+from src.crud import (
+    is_id_exists,
+    fetch_user_by_id,
+    post_create,
+    fetch_post_by_id,
+    fetch_all_posts,
+    full_post_update,
+    partial_post_update,
+    post_delete,
 )
 
 router = APIRouter()
@@ -32,9 +41,7 @@ async def create_post(
     post: PostCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Post:
-    existing_user = await db.scalar(
-        select(User).where(User.id == post.user_id),
-    )
+    existing_user = await fetch_user_by_id(db, post.user_id)
 
     if not existing_user:
         raise HTTPException(
@@ -48,10 +55,7 @@ async def create_post(
         author=existing_user,
     )
 
-    db.add(new_post)
-    await db.commit()
-
-    return new_post
+    return await post_create(db, new_post)
 
 
 @router.get(
@@ -61,10 +65,7 @@ async def create_post(
 async def get_all_posts(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[Post]:
-    stmt = select(Post).options(selectinload(Post.author))
-
-    result = await db.execute(stmt)
-    posts = result.scalars().all()
+    posts = await fetch_all_posts(db)
 
     return posts
 
@@ -77,15 +78,13 @@ async def get_post_by_id(
     post_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the post you want to retrieve",
             examples=[1],
         ),
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Post:
-    stmt = select(Post).options(selectinload(Post.author)).where(Post.id == post_id)
-    post = await db.scalar(stmt)
+    post = await fetch_post_by_id(db, post_id)
 
     if post:
         return post
@@ -104,7 +103,6 @@ async def update_post_full(
     post_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the post you want to update",
             examples=[1],
         ),
@@ -112,25 +110,16 @@ async def update_post_full(
     post_data: PostCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Post:
-    user_exists = await db.scalar(
-        select(User.id).where(User.id == post_data.user_id),
-    )
+
+    user_exists = await is_id_exists(db, post_data.user_id)
 
     if not user_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User with id {post_data.user_id} not found",
         )
-
-    stmt = (
-        update(Post)
-        .where(Post.id == post_id)
-        .values(**post_data.model_dump())
-        .returning(Post)
-        .options(selectinload(Post.author))
-    )
-
-    updated_post = await db.scalar(stmt)
+    update_data = post_data.model_dump()
+    updated_post = await full_post_update(db, post_id, update_data)
 
     if not updated_post:
         raise HTTPException(
@@ -138,7 +127,6 @@ async def update_post_full(
             detail=f"Post with id {post_id} not found",
         )
 
-    await db.commit()
     return updated_post
 
 
@@ -150,7 +138,6 @@ async def update_post_partial(
     post_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the post you want to update",
             examples=[1],
         ),
@@ -166,15 +153,7 @@ async def update_post_partial(
             detail="No data provided to update",
         )
 
-    stmt = (
-        update(Post)
-        .where(Post.id == post_id)
-        .values(**update_data)
-        .returning(Post)
-        .options(selectinload(Post.author))
-    )
-
-    updated_post = await db.scalar(stmt)
+    updated_post = await partial_post_update(db, post_id, update_data)
 
     if not updated_post:
         raise HTTPException(
@@ -182,7 +161,6 @@ async def update_post_partial(
             detail=f"Post with id {post_id} not found",
         )
 
-    await db.commit()
     return updated_post
 
 
@@ -194,20 +172,17 @@ async def delete_post(
     post_id: Annotated[
         int,
         Path(
-            ...,
             description="The ID of the post you want to delete",
             examples=[1],
         ),
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
-    stmt = delete(Post).where(Post.id == post_id)
-    result = await db.execute(stmt)
+    deleted = await post_delete(db, post_id)
 
-    if result.rowcount == 0:
+    if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id {post_id} not found",
         )
 
-    await db.commit()
