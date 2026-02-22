@@ -23,11 +23,11 @@ from src.crud import (
     is_id_exists,
     is_username_taken,
     is_email_taken,
-    get_user_by_id,
+    fetch_user_by_id,
     user_create,
     user_update,
     user_delete,
-    get_posts_by_user_id,
+    fetch_posts_by_user_id,
 )
 
 router = APIRouter()
@@ -78,7 +78,7 @@ async def get_user(
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    existing_user = await get_user_by_id(db, user_id)
+    existing_user = await fetch_user_by_id(db, user_id)
 
     if existing_user:
         return existing_user
@@ -153,7 +153,7 @@ async def delete_user(
     ],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
-    existing_user = await get_user_by_id(db, user_id)
+    existing_user = await fetch_user_by_id(db, user_id)
 
     if not existing_user:
         raise HTTPException(
@@ -186,6 +186,6 @@ async def get_user_posts(
             detail=f"User with id {user_id} not found",
         )
 
-    posts = await get_posts_by_user_id(db, user_id)
+    posts = await fetch_posts_by_user_id(db, user_id)
 
     return posts

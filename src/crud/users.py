@@ -46,7 +46,7 @@ async def is_email_taken(
     return result is not None
 
 
-async def get_user_by_id(
+async def fetch_user_by_id(
     db: AsyncSession,
     user_id: int,
 ) -> User | None:
@@ -88,7 +88,7 @@ async def user_delete(db: AsyncSession, user: User) -> None:
     await db.commit()
 
 
-async def get_posts_by_user_id(
+async def fetch_posts_by_user_id(
     db: AsyncSession,
     user_id: int,
 ) -> list[Post]:
