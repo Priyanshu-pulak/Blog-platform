@@ -1,10 +1,11 @@
 from typing import Any
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.models import User, Post
 from src.schemas import UserCreate
+from src.core import hash_password
 
 
 async def is_id_exists(
@@ -23,7 +24,7 @@ async def is_username_taken(
     username: str,
     exclude_user_id: int | None = None,
 ) -> bool:
-    stmt = select(User.id).where(User.username == username)
+    stmt = select(User.id).where(func.lower(User.username) == username.lower())
     if exclude_user_id is not None:
         stmt = stmt.where(User.id != exclude_user_id)
 
@@ -37,7 +38,7 @@ async def is_email_taken(
     email: str,
     exclude_user_id: int | None = None,
 ) -> bool:
-    stmt = select(User.id).where(User.email == email)
+    stmt = select(User.id).where(func.lower(User.email) == email.lower())
 
     if exclude_user_id is not None:
         stmt = stmt.where(User.id != exclude_user_id)
@@ -55,13 +56,23 @@ async def fetch_user_by_id(
     )
 
 
+async def fetch_user_by_email(
+    db: AsyncSession,
+    email: str,
+) -> User | None:
+    return await db.scalar(
+        select(User).where(func.lower(User.email) == email.lower()),
+    )
+
+
 async def user_create(
     db: AsyncSession,
     user: UserCreate,
 ) -> User:
     new_user = User(
         username=user.username,
-        email=user.email,
+        email=user.email.lower(),
+        password_hash=hash_password(user.password),
     )
 
     db.add(new_user)

@@ -12,10 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import User, Post
 from src.core import get_db
+from src.dependencies import get_current_user
+
+
 from src.schemas import (
     UserCreate,
     UserUpdate,
-    UserResponse,
+    UserPublicResponse,
+    UserPrivateResponse,
     PostResponse,
 )
 
@@ -35,7 +39,7 @@ router = APIRouter()
 
 @router.post(
     "",
-    response_model=UserResponse,
+    response_model=UserPrivateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_user(
@@ -65,8 +69,19 @@ async def create_user(
 
 
 @router.get(
+    "/me",
+    response_model=UserPrivateResponse,
+    description="Get the details of the currently authenticated user",
+)
+async def get_login_user_details(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    return current_user
+
+
+@router.get(
     "/{user_id}",
-    response_model=UserResponse,
+    response_model=UserPublicResponse,
 )
 async def get_user(
     user_id: Annotated[
@@ -91,7 +106,7 @@ async def get_user(
 
 @router.patch(
     "/{user_id}",
-    response_model=UserResponse,
+    response_model=UserPrivateResponse,
 )
 async def update_user(
     user_id: Annotated[

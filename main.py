@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from src.models import Post
 
-from src.routers import users_router, post_router
+from src.routers import users_router, post_router, auth_router
 from src.core import (
     validation_exception_handler,
     get_db,
@@ -22,8 +22,8 @@ from src.core import (
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(users_router, prefix="/api/users", tags=["Users"])
-
 app.include_router(post_router, prefix="/api/posts", tags=["Posts"])
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

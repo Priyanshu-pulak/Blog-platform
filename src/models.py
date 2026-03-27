@@ -6,7 +6,7 @@ from typing import Annotated, List
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.core import Base
+from src.core.database import Base
 
 intpk = Annotated[int, mapped_column(primary_key=True, index=True)]
 
@@ -16,6 +16,7 @@ timestamp = Annotated[
 
 str50 = Annotated[str, mapped_column(String(50))]
 str120 = Annotated[str, mapped_column(String(120))]
+str200 = Annotated[str, mapped_column(String(200))]
 text_content = Annotated[str, mapped_column(Text)]
 
 user_fk = Annotated[int, mapped_column(ForeignKey("users.id"), index=True)]
@@ -26,7 +27,8 @@ class User(Base):
     id: Mapped[intpk]
     username: Mapped[str50] = mapped_column(unique=True)
     email: Mapped[str120] = mapped_column(unique=True)
-    image_file: Mapped[str | None] = mapped_column(String(200), default=None)
+    password_hash: Mapped[str200]
+    image_file: Mapped[str200 | None] = mapped_column(default=None)
 
     posts: Mapped[List[Post]] = relationship(
         back_populates="author", cascade="all, delete-orphan"

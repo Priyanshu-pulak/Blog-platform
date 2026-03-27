@@ -23,8 +23,15 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    pass
-
+    password: Annotated[
+        str,
+        Field(
+            min_length=8,
+            max_length=20,
+            description="Password for the user must be between 8 and 20 characters",
+            examples=["Password@123"],
+        ),
+    ]
 
 class UserUpdate(UserBase):
     username: Annotated[
@@ -57,7 +64,7 @@ class UserUpdate(UserBase):
     ]
 
 
-class UserResponse(UserBase):
+class UserPublicResponse(UserBase):
     model_config = ConfigDict(
         from_attributes=True
     )  # pydantic will read data from the attributes of the SQLAlchemy model instance
@@ -66,6 +73,13 @@ class UserResponse(UserBase):
         Field(
             description="ID of the user",
             examples=[1],
+        ),
+    ]
+    username: Annotated[
+        str,
+        Field(
+            description="Username of the user",
+            examples=["Priyanshu"],
         ),
     ]
     image_file: Annotated[
@@ -78,5 +92,14 @@ class UserResponse(UserBase):
         str,
         Field(
             description="URL path to the profile picture of the user",
+        ),
+    ]
+
+class UserPrivateResponse(UserPublicResponse):
+    email: Annotated[
+        EmailStr,
+        Field(
+            description="Email address of the user",
+            examples=["priyanshu@gmail.com"],
         ),
     ]

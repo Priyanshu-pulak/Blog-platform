@@ -1,11 +1,13 @@
 from .posts import PostCreate, PostResponse, PostUpdate
-from .users import UserCreate, UserResponse, UserUpdate
-
+from .users import UserCreate, UserPublicResponse, UserPrivateResponse,UserUpdate
+from .tokens import Token
 __all__ = [
     "PostCreate",
     "PostResponse",
     "PostUpdate",
     "UserCreate",
-    "UserResponse",
+    "UserPublicResponse",
+    "UserPrivateResponse",
     "UserUpdate",
+    "Token",
 ]

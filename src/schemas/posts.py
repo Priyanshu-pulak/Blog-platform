@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Annotated
 
-from src.schemas.users import UserResponse
+from src.schemas.users import UserPublicResponse
 
 
 class PostBase(BaseModel):
@@ -83,7 +83,7 @@ class PostResponse(PostBase):
         ),
     ]
     author: Annotated[
-        UserResponse,
+        UserPublicResponse,
         Field(
             description="Author of the post",
         ),
