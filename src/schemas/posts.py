@@ -26,13 +26,7 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    user_id: Annotated[
-        int,
-        Field(
-            description="ID of the author of the post",
-            examples=[1],
-        ),
-    ]
+    pass
 
 
 class PostUpdate(PostBase):
@@ -68,13 +62,6 @@ class PostResponse(PostBase):
             examples=[1],
         ),
     ]
-    user_id: Annotated[
-        int,
-        Field(
-            description="ID of the author of the post",
-            examples=[1],
-        ),
-    ]
     date_posted: Annotated[
         datetime,
         Field(
@@ -86,5 +73,25 @@ class PostResponse(PostBase):
         UserPublicResponse,
         Field(
             description="Author of the post",
+        ),
+    ]
+
+
+class PostProfileResponse(PostBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    post_id: Annotated[
+        int,
+        Field(
+            validation_alias="id",
+            description="ID of the post",
+            examples=[1],
+        ),
+    ]
+    date_posted: Annotated[
+        datetime,
+        Field(
+            description="Date and time when the post was created",
+            examples=["2024-06-01T12:00:00Z"],
         ),
     ]

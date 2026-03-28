@@ -33,7 +33,7 @@ class UserCreate(UserBase):
         ),
     ]
 
-class UserUpdate(UserBase):
+class UserUpdate(BaseModel):
     username: Annotated[
         str | None,
         Field(
@@ -64,7 +64,7 @@ class UserUpdate(UserBase):
     ]
 
 
-class UserPublicResponse(UserBase):
+class UserPublicResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )  # pydantic will read data from the attributes of the SQLAlchemy model instance

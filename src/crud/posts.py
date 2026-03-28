@@ -71,9 +71,14 @@ async def partial_post_update(
 async def post_delete(
     db: AsyncSession,
     post_id: int,
+    user_id: int,
 ) -> bool:
-    stmt = delete(Post).where(Post.id == post_id)
+    stmt = delete(Post).where(
+        Post.id == post_id,
+        Post.user_id == user_id,
+    )
     result = await db.execute(stmt)
     
     await db.commit()
+
     return result.rowcount > 0

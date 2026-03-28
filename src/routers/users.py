@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import User, Post
 from src.core import get_db
-from src.dependencies import get_current_user
+from src.dependencies import CurrentUser
 
 
 from src.schemas import (
@@ -20,7 +20,7 @@ from src.schemas import (
     UserUpdate,
     UserPublicResponse,
     UserPrivateResponse,
-    PostResponse,
+    PostProfileResponse,
 )
 
 from src.crud import (
@@ -74,7 +74,7 @@ async def create_user(
     description="Get the details of the currently authenticated user",
 )
 async def get_login_user_details(
-    current_user: Annotated[User, Depends(get_current_user)],
+    current_user: CurrentUser,
 ) -> User:
     return current_user
 
@@ -116,9 +116,16 @@ async def update_user(
             examples=[1],
         ),
     ],
+    current_user: CurrentUser,
     user_update_data: UserUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
+    if current_user.id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this user",
+        )
+    
     update_data = user_update_data.model_dump(exclude_unset=True)
 
     if not update_data:
@@ -166,22 +173,21 @@ async def delete_user(
             examples=[1],
         ),
     ],
+    current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> None:
-    existing_user = await fetch_user_by_id(db, user_id)
-
-    if not existing_user:
+    if current_user.id != user_id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {user_id} not found",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this user",
         )
 
-    return await user_delete(db, existing_user)
+    return await user_delete(db, current_user)
 
 
 @router.get(
     "/{user_id}/posts",
-    response_model=list[PostResponse],
+    response_model=list[PostProfileResponse],
 )
 async def get_user_posts(
     user_id: Annotated[
