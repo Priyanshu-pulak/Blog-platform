@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Annotated, List
+from typing import Annotated
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,6 +21,7 @@ text_content = Annotated[str, mapped_column(Text)]
 
 user_fk = Annotated[int, mapped_column(ForeignKey("users.id"), index=True)]
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -30,7 +31,7 @@ class User(Base):
     password_hash: Mapped[str200]
     image_file: Mapped[str200 | None] = mapped_column(default=None)
 
-    posts: Mapped[List[Post]] = relationship(
+    posts: Mapped[list[Post]] = relationship(
         back_populates="author", cascade="all, delete-orphan"
     )
 

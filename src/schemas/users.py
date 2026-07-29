@@ -1,5 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field, EmailStr
 from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
@@ -32,6 +33,7 @@ class UserCreate(UserBase):
             examples=["Password@123"],
         ),
     ]
+
 
 class UserUpdate(BaseModel):
     username: Annotated[
@@ -94,6 +96,7 @@ class UserPublicResponse(BaseModel):
             description="URL path to the profile picture of the user",
         ),
     ]
+
 
 class UserPrivateResponse(UserPublicResponse):
     email: Annotated[

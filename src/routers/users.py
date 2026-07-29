@@ -4,34 +4,30 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
-    status,
     Path,
+    status,
 )
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import User, Post
 from src.core import get_db
-from src.dependencies import CurrentUser
-
-
-from src.schemas import (
-    UserCreate,
-    UserUpdate,
-    UserPublicResponse,
-    UserPrivateResponse,
-    PostProfileResponse,
-)
-
 from src.crud import (
+    fetch_posts_by_user_id,
+    fetch_user_by_id,
+    is_email_taken,
     is_id_exists,
     is_username_taken,
-    is_email_taken,
-    fetch_user_by_id,
     user_create,
-    user_update,
     user_delete,
-    fetch_posts_by_user_id,
+    user_update,
+)
+from src.dependencies import CurrentUser
+from src.models import Post, User
+from src.schemas import (
+    PostProfileResponse,
+    UserCreate,
+    UserPrivateResponse,
+    UserPublicResponse,
+    UserUpdate,
 )
 
 router = APIRouter()
@@ -125,7 +121,7 @@ async def update_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this user",
         )
-    
+
     update_data = user_update_data.model_dump(exclude_unset=True)
 
     if not update_data:

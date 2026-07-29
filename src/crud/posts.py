@@ -1,10 +1,11 @@
 from typing import Any
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.models import Post
+
 
 async def post_create(
     db: AsyncSession,
@@ -14,6 +15,7 @@ async def post_create(
     await db.commit()
 
     return post
+
 
 async def fetch_post_by_id(
     db: AsyncSession,
@@ -33,6 +35,7 @@ async def fetch_all_posts(
 
     return result.scalars().all()
 
+
 async def full_post_update(
     db: AsyncSession,
     post_id: int,
@@ -45,11 +48,12 @@ async def full_post_update(
         .returning(Post)
         .options(selectinload(Post.author))
     )
-    
+
     updated_post = await db.scalar(stmt)
     await db.commit()
 
     return updated_post
+
 
 async def partial_post_update(
     db: AsyncSession,
@@ -68,6 +72,7 @@ async def partial_post_update(
     await db.commit()
     return updated_post
 
+
 async def post_delete(
     db: AsyncSession,
     post_id: int,
@@ -78,7 +83,7 @@ async def post_delete(
         Post.user_id == user_id,
     )
     result = await db.execute(stmt)
-    
+
     await db.commit()
 
     return result.rowcount > 0

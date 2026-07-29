@@ -1,10 +1,10 @@
-
 from datetime import UTC, datetime, timedelta
+
 import jwt
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
-from src.core.config import settings
 
+from src.core.config import settings
 
 # Creating a password hasher instance using argon2 with recommended settings
 password_hasher = PasswordHash.recommended()

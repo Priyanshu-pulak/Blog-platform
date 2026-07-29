@@ -1,23 +1,20 @@
 from typing import Annotated
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models import Post
-
-from src.routers import users_router, post_router, auth_router
 from src.core import (
-    validation_exception_handler,
     get_db,
     lifespan,
+    validation_exception_handler,
 )
-
+from src.models import Post
+from src.routers import auth_router, post_router, users_router
 
 app = FastAPI(lifespan=lifespan)
 

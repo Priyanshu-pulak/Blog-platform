@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
 from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.schemas.users import UserPublicResponse
 

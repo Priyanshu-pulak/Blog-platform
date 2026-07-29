@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from src.core.database import Base, engine
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     async with engine.begin() as conn:

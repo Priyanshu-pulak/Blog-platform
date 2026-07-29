@@ -1,11 +1,12 @@
 from typing import Any
+
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models import User, Post
-from src.schemas import UserCreate
 from src.core import hash_password
+from src.models import Post, User
+from src.schemas import UserCreate
 
 
 async def is_id_exists(

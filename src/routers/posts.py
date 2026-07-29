@@ -4,30 +4,27 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
-    status,
     Path,
+    status,
 )
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models import Post
 from src.core import get_db
-from src.schemas import (
-    PostCreate,
-    PostUpdate,
-    PostResponse,
-)
-
 from src.crud import (
-    post_create,
-    fetch_post_by_id,
     fetch_all_posts,
+    fetch_post_by_id,
     full_post_update,
     partial_post_update,
+    post_create,
     post_delete,
 )
-
 from src.dependencies import CurrentUser
+from src.models import Post
+from src.schemas import (
+    PostCreate,
+    PostResponse,
+    PostUpdate,
+)
 
 router = APIRouter()
 
